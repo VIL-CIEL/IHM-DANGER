@@ -2,7 +2,7 @@
 #define IHMDANGER_H
 
 #include <QMainWindow>
-#include "QtSerialPort/QSerialPort"
+#include "gestionportserie.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -19,6 +19,7 @@ public:
     ~IHMDanger();
 
 private slots:
+
     void reception();
 
     void autoScroll();
@@ -26,8 +27,6 @@ private slots:
     void on_pushButton_com_connexion_clicked();
 
     void on_pushButton_com_deconnexion_clicked();
-
-    void envoieTrame(QString);
 
     void on_pushButton_signal_led1_clicked();
 
@@ -39,10 +38,6 @@ private slots:
 
 private:
     Ui::IHMDanger *ui;
-    QSerialPort *portConnexion;
-
-    bool isPortOpen;
-    static QByteArray trameExtraite;
-    bool isInTrame;
+    GestionPortSerie *GestPorts;
 };
 #endif // IHMDANGER_H
