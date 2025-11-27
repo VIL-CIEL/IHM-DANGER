@@ -414,6 +414,9 @@ border-radius: 5px ;
        <height>24</height>
       </rect>
      </property>
+     <property name="text">
+      <string>1</string>
+     </property>
     </widget>
     <widget class="QPushButton" name="pushButton_horo_stop">
      <property name="geometry">
@@ -425,7 +428,7 @@ border-radius: 5px ;
       </rect>
      </property>
      <property name="text">
-      <string>Stop</string>
+      <string>Début Acquisition</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButton_horo_effacer">
@@ -651,7 +654,7 @@ border-radius: 5px ;
       </rect>
      </property>
      <property name="value">
-      <number>32</number>
+      <number>0</number>
      </property>
     </widget>
     <widget class="QProgressBar" name="progressBar_valm_slider2">
@@ -664,7 +667,7 @@ border-radius: 5px ;
       </rect>
      </property>
      <property name="value">
-      <number>24</number>
+      <number>0</number>
      </property>
     </widget>
     <widget class="QProgressBar" name="progressBar_valm_slider3">
@@ -677,7 +680,7 @@ border-radius: 5px ;
       </rect>
      </property>
      <property name="value">
-      <number>24</number>
+      <number>0</number>
      </property>
     </widget>
     <widget class="QLabel" name="label_valm_slider3">

@@ -3,6 +3,10 @@
 #include "QMessageBox"
 #include <QIntValidator>
 #include <QScrollBar>
+#include <QTimer>
+#include <QFile>
+#include <QCoreApplication>
+#include <QDir>
 
 IHMDanger::IHMDanger(QWidget *parent)
     : QMainWindow(parent)
@@ -14,14 +18,22 @@ IHMDanger::IHMDanger(QWidget *parent)
     ui->lineEdit_signal_nb_chiffre_afficher->setValidator(valid);
 
     GestPorts = nullptr;
+
+    // timer
+    timer = new QTimer(this);
+    timer->setInterval(1000); // 1000ms = 1s
+    connect(timer, SIGNAL(timeout()), this, SLOT(on_Timeout()));
+    isTimerStarted = false;
 }
 
 IHMDanger::~IHMDanger()
 {
+    timer->stop();
     if(GestPorts != nullptr){
         delete GestPorts;
         QMessageBox::information(this, "INFO", "Port série fermé.");
     }
+    delete timer;
     delete ui;
 }
 
@@ -111,6 +123,12 @@ void IHMDanger::autoScroll()
     ui->textEdit_horo_donnee_lues->verticalScrollBar()->setValue(ui->textEdit_horo_donnee_lues->verticalScrollBar()->maximum());
 }
 
+void IHMDanger::on_Timeout()
+{
+    if(GestPorts->portConnexion->canReadLine())
+        reception();
+}
+
 
 void IHMDanger::on_pushButton_com_connexion_clicked()
 {
@@ -119,7 +137,7 @@ void IHMDanger::on_pushButton_com_connexion_clicked()
     // Connection au Port COM
     if (GestPorts->portConnexion->open(QIODevice::ReadWrite))
     {
-        connect(GestPorts->portConnexion, SIGNAL(readyRead()), this, SLOT(reception()));
+        //connect(GestPorts->portConnexion, SIGNAL(readyRead()), this, SLOT(reception()));
         connect(ui->textEdit_horo_donnee_lues, SIGNAL(textChanged()), this, SLOT(autoScroll()));
 
         ui->label_com_status_output->setText("Connecté");
@@ -232,3 +250,64 @@ void IHMDanger::on_pushButton_signal_eteindre_clicked()
         QMessageBox::critical(this, "ERROR", "Le port n'est pas ouvert.");
     }
 }
+
+void IHMDanger::on_pushButton_horo_stop_clicked()
+{
+    if(!isTimerStarted)
+    {
+        if(ui->lineEdit_horo_interval->text().size() != 0){
+            timer->start(ui->lineEdit_horo_interval->text().toInt()*1000);
+            ui->pushButton_horo_stop->setText("Stop");
+            isTimerStarted = true;
+        }
+        else{
+            QMessageBox::critical(this, "ERROR", "Merci de renseigner une intervalle.");
+        }
+    }
+    else
+    {
+        timer->stop();
+        ui->pushButton_horo_stop->setText("Début Acquisition");
+        isTimerStarted = false;
+    }
+}
+
+
+void IHMDanger::on_pushButton_horo_effacer_clicked()
+{
+    ui->textEdit_horo_donnee_lues->clear();
+}
+
+
+void IHMDanger::on_pushButton_wd_sauvegarder_clicked()
+{
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString filePath = QDir(appDir).absoluteFilePath("sauvegarde.txt");
+
+    QFile file(filePath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
+        QTextStream stream(&file);
+        stream << ui->textEdit_horo_donnee_lues->toPlainText();
+
+        if(file.flush())
+        {
+            QMessageBox::information(this, "INFO", "Données Sauvegardées");
+        }
+        else
+        {
+            QMessageBox::critical(this, "ERROR", "Les données n'ont pas été sauvegardées.");
+        }
+        file.close();
+
+    } else {
+        QMessageBox::critical(this, "ERROR", "Impossible d'ouvrir le fichier de sauvegarde.");
+    }
+}
+
+
+void IHMDanger::on_pushButton_wd_quitter_clicked()
+{
+    QApplication::quit();
+}
+

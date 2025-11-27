@@ -33,32 +33,17 @@ GestionPortSerie::~GestionPortSerie()
 
 void GestionPortSerie::reception(QByteArray* OctetsRecu, QString* donneeAmelioree, bool isChecked)
 {
+    trameExtraite.clear();
     // Récupération des octets disponibles et lecture des octets
     *OctetsRecu = portConnexion->readAll();
     //
 
-    // On extrait la trame
-    auto itfirst = std::find(OctetsRecu->begin(), OctetsRecu->end(), '#');
-    auto itlast = std::find(OctetsRecu->begin(), OctetsRecu->end(), '\n');
+    // Extraction de la trame
+    int startPos = OctetsRecu->indexOf('#');
+    int endPos = OctetsRecu->indexOf('\n', startPos);;
 
-    /// Si l'octet a un # dedans, on commence a recupérer la trame
-    if(itfirst != OctetsRecu->end())
-    {
-        trameExtraite += *OctetsRecu;
-        isInTrame = true;
-    }
-    /// Si l'octet a un \n dedans, on récupere les derniers octets
-    /// et on affiche puis reinitialise la trame
-    else if(itlast != OctetsRecu->end())
-    {
-        trameExtraite += *OctetsRecu;
-        isInTrame = false;
-
-        trameExtraite = "";
-    }
-    /// Si la récupération de trame a commencé, on recupere l'octet
-    else if(isInTrame){
-        trameExtraite += *OctetsRecu;
+    if (startPos != -1 && endPos != -1) {  // Si '#' est trouvé
+        trameExtraite = OctetsRecu->mid(startPos, endPos - startPos -1);
     }
     //
 
