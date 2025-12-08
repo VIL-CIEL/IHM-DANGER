@@ -4,8 +4,7 @@
 #include <QScrollBar>
 #include <QTimer>
 #include <QFile>
-#include <QCoreApplication>
-#include <QDir>
+#include <QFileDialog>
 
 IHMDanger::IHMDanger(QWidget *parent)
     : QMainWindow(parent)
@@ -366,14 +365,41 @@ void IHMDanger::on_pushButton_horo_effacer_clicked()
 
 void IHMDanger::on_pushButton_wd_sauvegarder_clicked()
 {
-    QString appDir = QCoreApplication::applicationDirPath();
-    QString filePath = QDir(appDir).absoluteFilePath("sauvegarde.txt");
+    ///QString appDir = QCoreApplication::applicationDirPath();
+    ///QString filePath = QDir(appDir).absoluteFilePath("sauvegarde.txt");
+
+    // Arrete l'acquisition si elle a commencé
+    if(isTimerStarted)
+        on_pushButton_horo_stop_clicked();
+
+    // Fenetre de dialogue pour choisir l'endroit où sauvegarder le fichier
+    QString filePath = QFileDialog::getSaveFileName(this, tr("Sauvegarder le fichier"), "", tr("Fichiers texte (*.txt);;Fichiers CSV (*.csv)"));
 
     QFile file(filePath);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 
         QTextStream stream(&file);
-        stream << ui->textEdit_horo_donnee_lues->toPlainText();
+
+        // Gestion des types d'affichages
+        if(ui->comboBox_horo_type_affichage->currentText() != "Tableau")
+            stream << ui->textEdit_horo_donnee_lues->toPlainText();
+        else
+        {
+            int rowCount = ui->tableWidget_horo_table->rowCount();
+            int colCount = ui->tableWidget_horo_table->columnCount();
+
+            stream << "Date;Heure;Slider 1;Slider 2;Slider3;Temperature;Luminosite\n";
+
+            for (int row = 0; row < rowCount; ++row) {
+                for (int col = 0; col < colCount; ++col) {
+                    QTableWidgetItem* item = ui->tableWidget_horo_table->item(row, col);
+                    QString text = item ? item->text() : "";
+                    stream << text;
+                    if (col < colCount - 1) stream << ";";
+                }
+                stream << "\n";
+            }
+        }
 
         if(file.flush())
         {
@@ -425,25 +451,23 @@ void IHMDanger::on_comboBox_horo_type_affichage_currentTextChanged(const QString
         isAffichageAmeliore = true;
         ui->textEdit_horo_donnee_lues->show();
         ui->tableWidget_horo_table->hide();
-        // Facultatif
-        ui->tableWidget_horo_table->setRowCount(0);
     }
     else if(arg1 == "Tableau")
     {
         isAffichageAmeliore = true;
         ui->tableWidget_horo_table->show();
         ui->textEdit_horo_donnee_lues->hide();
-        // Facultatif
-        ui->textEdit_horo_donnee_lues->clear();
     }
     else
     {
         isAffichageAmeliore = false;
         ui->textEdit_horo_donnee_lues->show();
         ui->tableWidget_horo_table->hide();
-        // Facultatif
-        ui->tableWidget_horo_table->setRowCount(0);
     }
+
+    /// Facultatif
+    ui->tableWidget_horo_table->setRowCount(0);
+    ui->textEdit_horo_donnee_lues->clear();
     //
 }
 
