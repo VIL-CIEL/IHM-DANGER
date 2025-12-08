@@ -11,7 +11,7 @@ class GestionPortSerie : public QObject
 {
     Q_OBJECT
 public:
-    explicit GestionPortSerie(QString, QObject *parent = nullptr);
+    explicit GestionPortSerie(QString, int, QObject *parent = nullptr);
     ~GestionPortSerie();
     QSerialPort *portConnexion;
 
@@ -20,6 +20,8 @@ public:
 
     void reception(QByteArray*, QString*, bool);
     QString envoieTrame(QString);
+
+    static int checkSum(QByteArray);
 
 signals:
 };

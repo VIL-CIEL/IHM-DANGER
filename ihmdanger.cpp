@@ -1,7 +1,6 @@
 #include "ihmdanger.h"
 #include "ui_ihmdanger.h"
 #include "QMessageBox"
-#include <QIntValidator>
 #include <QScrollBar>
 #include <QTimer>
 #include <QFile>
@@ -14,7 +13,14 @@ IHMDanger::IHMDanger(QWidget *parent)
 {
     ui->setupUi(this);
 
-    QIntValidator *valid = new QIntValidator(0, 99, ui->lineEdit_signal_nb_chiffre_afficher);
+    // Config Carte Branly
+    estCarteBranly = true;
+
+    // Config Digit Carte
+    if(estCarteBranly)
+        valid = new QIntValidator(0, 99, ui->lineEdit_signal_nb_chiffre_afficher);
+    else
+        valid = new QIntValidator(0, 9, ui->lineEdit_signal_nb_chiffre_afficher);
     ui->lineEdit_signal_nb_chiffre_afficher->setValidator(valid);
 
     GestPorts = nullptr;
@@ -24,6 +30,10 @@ IHMDanger::IHMDanger(QWidget *parent)
     timer->setInterval(1000); // 1000ms = 1s
     connect(timer, SIGNAL(timeout()), this, SLOT(on_Timeout()));
     isTimerStarted = false;
+
+    // Configuration Type d'Affichage
+    on_comboBox_horo_type_affichage_currentTextChanged(ui->comboBox_horo_type_affichage->currentText());
+    //
 }
 
 IHMDanger::~IHMDanger()
@@ -33,6 +43,7 @@ IHMDanger::~IHMDanger()
         delete GestPorts;
         QMessageBox::information(this, "INFO", "Port série fermé.");
     }
+    delete valid;
     delete timer;
     delete ui;
 }
@@ -42,80 +53,126 @@ void IHMDanger::reception()
     QByteArray OctetsRecu;
     QString donneeAmelioree;
 
-    GestPorts->reception(&OctetsRecu, &donneeAmelioree, ui->pushButton_horo_affichage_ameliore->isChecked());
-    QStringList LDonnee = donneeAmelioree.split("/!/");
+    GestPorts->reception(&OctetsRecu, &donneeAmelioree, isAffichageAmeliore);
 
-    if(LDonnee.size() == 2) // Si on a la validation du check et le reste des valeurs
+    if(OctetsRecu.size() == 0) // Vérifie qu'on a reçu des données
     {
-        QString ischeckStr = LDonnee[0];
-        LDonnee = LDonnee[1].split("/:/:/");
+        ui->textEdit_horo_donnee_lues->insertPlainText("|None|");
+    }
+    else
+    {
+        if(!isAffichageAmeliore) // Afficher les données brut
+        {
+            /// Donnee lues brut
+            ui->textEdit_horo_donnee_lues->insertPlainText(OctetsRecu);
+        }
 
+        QStringList LDonnee = donneeAmelioree.split("//");
 
-            if(OctetsRecu.size() == 0) // Vérifie qu'on a reçu des données
+        if(LDonnee.size() == 10) // Vérifie si on a les valeurs de tout les capteurs tel que :
+        // 0 : slider 1, 1 : slider 2, 2 : slider 3, 3 : lumieres, 4 : temperature, 5 : afficheur, 6 : led1, 7 : led2, 8 : date, 9 : heure
+        {
+            if(isAffichageAmeliore) // Regarde si on doit afficher les valeurs détaillées
             {
-                ui->textEdit_horo_donnee_lues->insertPlainText("|None|");
+                if(ui->comboBox_horo_type_affichage->currentText() == "Liste")
+                ///Donnee Amelioré en liste
+                {
+                    QString ListeDonnee = QString("\n-----------------------------"
+                                                  "\nSlider 1 : %1"
+                                                  "\nSlider 2 : %2"
+                                                  "\nSlider 2 : %3"
+                                                  "\nTemperature : %4"
+                                                  "\nLuminosité : %5"
+                                                  "\nLed 1 : %6"
+                                                  "\nLed 2 : %7"
+                                                  "\n Afficheur : %8"
+                                                  "\n Date : %9 %10")
+                                              .arg(LDonnee[0])
+                                              .arg(LDonnee[1])
+                                              .arg(LDonnee[2])
+                                              .arg(LDonnee[4])
+                                              .arg(LDonnee[3])
+                                              .arg(LDonnee[6])
+                                              .arg(LDonnee[7])
+                                              .arg(LDonnee[5])
+                                              .arg(LDonnee[8])
+                                              .arg(LDonnee[9]);
+                    ui->textEdit_horo_donnee_lues->insertPlainText(ListeDonnee);
+                }
+                ///Donnee Amelioré en Tableau
+                else
+                {
+                    // Ajoute une ligne
+                    ui->tableWidget_horo_table->insertRow( ui->tableWidget_horo_table->rowCount());
+
+                    // Modifie la case Date
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 0, new QTableWidgetItem(LDonnee[8]));
+
+                    // Modifie la case Heure
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 1, new QTableWidgetItem(LDonnee[9]));
+
+                    // Modifie la case Slider 1
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 2, new QTableWidgetItem(LDonnee[0]));
+
+                    // Modifie la case Slider 2
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 3, new QTableWidgetItem(LDonnee[1]));
+
+                    // Modifie la case Slider 3
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 4, new QTableWidgetItem(LDonnee[2]));
+
+                    // Modifie la case Temperature
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 5, new QTableWidgetItem(LDonnee[4]));
+
+                    // Modifie la case Luminosite
+                    ui->tableWidget_horo_table->setItem( ui->tableWidget_horo_table->rowCount()-1, 6, new QTableWidgetItem(LDonnee[3]));
+
+                    // Scroll jursqu'a la fin du tableau
+                    ui->tableWidget_horo_table->scrollToBottom();
+                }
+            }
+
+            /// Valeurs des progress bar
+            ui->progressBar_valm_slider1->setValue(LDonnee[0].toFloat()*20);
+            ui->progressBar_valm_slider2->setValue(LDonnee[1].toFloat()*20);
+            ui->progressBar_valm_slider3->setValue(LDonnee[2].toFloat()*20);
+
+            /// Valeurs des LCD Number
+            ui->lcdNumber_valm_slider1->display(LDonnee[0].toFloat());
+            ui->lcdNumber_valm_slider2->display(LDonnee[1].toFloat());
+            ui->lcdNumber_valm_slider3->display(LDonnee[2].toFloat());
+            ui->lcdNumber_signal_luminosite->display(LDonnee[3].toFloat());
+            ui->lcdNumber_valm_temperature->display(LDonnee[4].toFloat());
+
+            /// Valeurs d'afficheur, LCD Number
+            if(LDonnee[5] == "XX" || LDonnee[5] == "X"){
+                ui->lcdNumber_signal_nb_affiche->display("-----");
             }
             else
             {
-                if(ischeckStr == "isChecked") // Regarde si on doit afficher les valeurs détaillées
-                {
-                    ///Donnee Amelioré
-                    ui->textEdit_horo_donnee_lues->insertPlainText(LDonnee[0]);
-                }
-                else // Afficher les données brut
-                {
-                    /// Donnee lues brut
-                    ui->textEdit_horo_donnee_lues->insertPlainText(OctetsRecu);
-                }
+                ui->lcdNumber_signal_nb_affiche->display(LDonnee[5].toFloat());
             }
 
-            if(LDonnee.size() == 2) // Si on a les valeurs d'affichage + et les valeurs de progressbar/lcd
+            /// Valeurs de led1 : changement couleur bouton
+            if(LDonnee[6] == "1")
             {
-                LDonnee = LDonnee[1].split("//");
+                ui->pushButton_signal_led1->setStyleSheet("background-color: green;");
+            }
+            else
+            {
+                ui->pushButton_signal_led1->setStyleSheet("");
+            }
 
-                if(LDonnee.size() == 8) // Vérifie si on a les valeurs de tout les capteurs tel que :
-                // 0 : slider 1, 1 : slider 2, 2 : slider 3, 3 : lumieres, 4 : temperature, 5 : afficheur
-                {
-                    /// Valeurs des progress bar
-                    ui->progressBar_valm_slider1->setValue(LDonnee[0].toFloat()*20);
-                    ui->progressBar_valm_slider2->setValue(LDonnee[1].toFloat()*20);
-                    ui->progressBar_valm_slider3->setValue(LDonnee[2].toFloat()*20);
-
-                    /// Valeurs des LCD Number
-                    ui->lcdNumber_valm_slider1->display(LDonnee[0].toFloat());
-                    ui->lcdNumber_valm_slider2->display(LDonnee[1].toFloat());
-                    ui->lcdNumber_valm_slider3->display(LDonnee[2].toFloat());
-                    ui->lcdNumber_signal_luminosite->display(LDonnee[3].toFloat());
-                    ui->lcdNumber_valm_temperature->display(LDonnee[4].toFloat());
-                    if(LDonnee[5] == "XX"){
-                        ui->lcdNumber_signal_nb_affiche->display("-----");
-                    }
-                    else
-                    {
-                        ui->lcdNumber_signal_nb_affiche->display(LDonnee[5].toFloat());
-                    }
-
-                    if(LDonnee[6] == "1")
-                    {
-                        ui->pushButton_signal_led1->setStyleSheet("background-color: green;");
-                    }
-                    else
-                    {
-                        ui->pushButton_signal_led1->setStyleSheet("");
-                    }
-                    if(LDonnee[7] == "1")
-                    {
-                        ui->pushButton_signal_led2->setStyleSheet("background-color: green;");
-                    }
-                    else
-                    {
-                        ui->pushButton_signal_led2->setStyleSheet("");
-                    }
-
-                }
+            /// Valeurs de led2 : changement couleur bouton
+            if(LDonnee[7] == "1")
+            {
+                ui->pushButton_signal_led2->setStyleSheet("background-color: green;");
+            }
+            else
+            {
+                ui->pushButton_signal_led2->setStyleSheet("");
+            }
         }
     }
-
 }
 
 void IHMDanger::autoScroll()
@@ -132,7 +189,7 @@ void IHMDanger::on_Timeout()
 
 void IHMDanger::on_pushButton_com_connexion_clicked()
 {
-    GestPorts = new GestionPortSerie(ui->spinBox_com_portcom->text());
+    GestPorts = new GestionPortSerie(ui->spinBox_com_portcom->text(), ui->comboBox_com_baud->currentText().toInt());
 
     // Connection au Port COM
     if (GestPorts->portConnexion->open(QIODevice::ReadWrite))
@@ -167,7 +224,14 @@ void IHMDanger::on_pushButton_com_deconnexion_clicked()
 void IHMDanger::on_pushButton_signal_led1_clicked()
 {
     if(GestPorts != nullptr){
-        QString err = GestPorts->envoieTrame("$;led1;XXXX;XXXXX;XX;\n");
+        //Gestion Carte Branly
+        QString err;
+        if(estCarteBranly)
+            err = GestPorts->envoieTrame("$;led1;XXXX;XXXXX;XX;\n");
+        else
+            err = GestPorts->envoieTrame("$;led1;XXXX;XXXXX;X;\n");
+
+        // Gestion D'erreur
         QStringList e = err.split("/");
         if(e[0] == "ERROR")
         {
@@ -186,8 +250,14 @@ void IHMDanger::on_pushButton_signal_led1_clicked()
 void IHMDanger::on_pushButton_signal_led2_clicked()
 {
     if(GestPorts != nullptr){
-        QString err = GestPorts->envoieTrame("$;XXXX;led2;XXXXX;XX;\n");
+        //Gestion Carte Branly
+        QString err;
+        if(estCarteBranly)
+            err = GestPorts->envoieTrame("$;XXXX;led2;XXXXX;XX;\n");
+        else
+            err = GestPorts->envoieTrame("$;XXXX;led2;XXXXX;X;\n");
 
+        // Gestion D'erreur
         QStringList e = err.split("/");
         if(e[0] == "ERROR")
         {
@@ -207,10 +277,15 @@ void IHMDanger::on_pushButton_signal_afficher_clicked()
 {
     if(GestPorts != nullptr){
         QString nb = ui->lineEdit_signal_nb_chiffre_afficher->text();
-        if(nb.size() == 2)
+
+        // Gestion Carte Branly
+        //    -> Soit c'est une carte branly donc nb.size = 2
+        //    -> Ou ce n'est pas une carte branly donc on a nb.size = 1
+        if(nb.size() == 2 || (!estCarteBranly && nb.size() == 1))
         {
             QString err = GestPorts->envoieTrame("$;XXXX;XXXX;segON;" + nb + ";\n");
 
+            // Gestion D'erreur
             QStringList e = err.split("/");
             if(e[0] == "ERROR")
             {
@@ -235,7 +310,14 @@ void IHMDanger::on_pushButton_signal_eteindre_clicked()
 {
     if(GestPorts != nullptr){
 
-        QString err =  GestPorts->envoieTrame("$;XXXX;XXXX;segOF;XX;\n");
+        //Gestion Carte Branly
+        QString err;
+        if(estCarteBranly)
+            err = GestPorts->envoieTrame("$;XXXX;XXXX;segOF;XX;\n");
+        else
+            err = GestPorts->envoieTrame("$;XXXX;XXXX;segOF;X;\n");
+
+        // Gestion D'erreur
         QStringList e = err.split("/");
         if(e[0] == "ERROR")
         {
@@ -275,7 +357,10 @@ void IHMDanger::on_pushButton_horo_stop_clicked()
 
 void IHMDanger::on_pushButton_horo_effacer_clicked()
 {
-    ui->textEdit_horo_donnee_lues->clear();
+    if(ui->comboBox_horo_type_affichage->currentText() != "Tableau")
+        ui->textEdit_horo_donnee_lues->clear();
+    else
+        ui->tableWidget_horo_table->setRowCount(0);
 }
 
 
@@ -309,5 +394,56 @@ void IHMDanger::on_pushButton_wd_sauvegarder_clicked()
 void IHMDanger::on_pushButton_wd_quitter_clicked()
 {
     QApplication::quit();
+}
+
+
+void IHMDanger::on_checkBox_signal_carte_branly_stateChanged(int arg1)
+{
+    if(arg1 == 2)
+    {
+        estCarteBranly = true;
+    }
+    else
+    {
+        estCarteBranly = false;
+    }
+
+    ui->lineEdit_signal_nb_chiffre_afficher->clear();
+    if(estCarteBranly)
+        valid = new QIntValidator(0, 99, ui->lineEdit_signal_nb_chiffre_afficher);
+    else
+        valid = new QIntValidator(0, 9, ui->lineEdit_signal_nb_chiffre_afficher);
+    ui->lineEdit_signal_nb_chiffre_afficher->setValidator(valid);
+}
+
+
+void IHMDanger::on_comboBox_horo_type_affichage_currentTextChanged(const QString &arg1)
+{
+    // Configuration Type d'Affichage
+    if(arg1 == "Liste")
+    {
+        isAffichageAmeliore = true;
+        ui->textEdit_horo_donnee_lues->show();
+        ui->tableWidget_horo_table->hide();
+        // Facultatif
+        ui->tableWidget_horo_table->setRowCount(0);
+    }
+    else if(arg1 == "Tableau")
+    {
+        isAffichageAmeliore = true;
+        ui->tableWidget_horo_table->show();
+        ui->textEdit_horo_donnee_lues->hide();
+        // Facultatif
+        ui->textEdit_horo_donnee_lues->clear();
+    }
+    else
+    {
+        isAffichageAmeliore = false;
+        ui->textEdit_horo_donnee_lues->show();
+        ui->tableWidget_horo_table->hide();
+        // Facultatif
+        ui->tableWidget_horo_table->setRowCount(0);
+    }
+    //
 }
 

@@ -143,6 +143,34 @@ border-radius: 5px ;
       <string>Port COM</string>
      </property>
     </widget>
+    <widget class="QComboBox" name="comboBox_com_baud">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>10</y>
+       <width>72</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <item>
+      <property name="text">
+       <string>9600</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QLabel" name="label_com_baud">
+     <property name="geometry">
+      <rect>
+       <x>193</x>
+       <y>13</y>
+       <width>31</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Baud</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_signal">
     <property name="geometry">
@@ -319,6 +347,9 @@ border-radius: 5px ;
      <property name="text">
       <string>Carte Branly</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </widget>
    <widget class="QFrame" name="frame_horo">
@@ -336,25 +367,6 @@ border-radius: 5px ;
     <property name="frameShadow">
      <enum>QFrame::Shadow::Raised</enum>
     </property>
-    <widget class="QPushButton" name="pushButton_horo_affichage_ameliore">
-     <property name="geometry">
-      <rect>
-       <x>420</x>
-       <y>10</y>
-       <width>80</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Affichage +</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
     <widget class="QTextEdit" name="textEdit_horo_donnee_lues">
      <property name="geometry">
       <rect>
@@ -443,6 +455,95 @@ border-radius: 5px ;
      <property name="text">
       <string>Effacer</string>
      </property>
+    </widget>
+    <widget class="QComboBox" name="comboBox_horo_type_affichage">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>10</y>
+       <width>72</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="currentText">
+      <string>Tableau</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Trames</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Liste</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Tableau</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QLabel" name="label_horo_type_affichage">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>11</y>
+       <width>91</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Type Affichage :</string>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_horo_table">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>491</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <property name="columnCount">
+      <number>7</number>
+     </property>
+     <column>
+      <property name="text">
+       <string>Date</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Heure</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Slider 1</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Slider 2</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Slider 3</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Temperature</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Luminosite</string>
+      </property>
+     </column>
     </widget>
    </widget>
    <widget class="QFrame" name="frame_valm">

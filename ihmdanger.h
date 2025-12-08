@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "gestionportserie.h"
+#include <QIntValidator>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,6 +18,7 @@ class IHMDanger : public QMainWindow
 public:
     IHMDanger(QWidget *parent = nullptr);
     ~IHMDanger();
+    bool estCarteBranly;
 
 private slots:
 
@@ -46,11 +48,17 @@ private slots:
 
     void on_pushButton_wd_quitter_clicked();
 
+    void on_checkBox_signal_carte_branly_stateChanged(int arg1);
+
+    void on_comboBox_horo_type_affichage_currentTextChanged(const QString &arg1);
+
 private:
     Ui::IHMDanger *ui;
     GestionPortSerie *GestPorts;
     QTimer *timer;
+    QIntValidator *valid;
 
     bool isTimerStarted;
+    bool isAffichageAmeliore;
 };
 #endif // IHMDANGER_H
